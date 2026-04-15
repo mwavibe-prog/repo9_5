@@ -17,6 +17,7 @@ const els = {
   phasePanel:    document.getElementById('phasePanel'),
   startBtn:      document.getElementById('startBtn'),
   resetBtn:      document.getElementById('resetBtn'),
+  soundBtn:      document.getElementById('soundBtn'),
 };
 
 // Build the join URL + QR.
@@ -33,8 +34,12 @@ socket.emit('joinHost');
 els.startBtn.addEventListener('click', () => socket.emit('start'));
 els.resetBtn.addEventListener('click', () => socket.emit('reset'));
 
-// --- Audio cues (short, gentle beeps). Kept simple with Web Audio. ---
+// --- Audio (ambient water + short cue beeps). All synthesized with Web Audio
+// so the repo stays self-contained (no audio files). ---
 let audioCtx = null;
+let water = null;     // { masterGain, stopWaves } handle for the ambient loop
+let soundOn = true;
+
 function ensureAudio() {
   if (!audioCtx) {
     try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
@@ -42,10 +47,103 @@ function ensureAudio() {
   }
   return audioCtx;
 }
-// Unlock audio on first user interaction (browsers require this).
-document.addEventListener('click', () => ensureAudio(), { once: true });
+
+// Start the ambient "river" sound: pink-ish noise through a lowpass filter,
+// gently modulated by a slow LFO + periodic "wave" swells. It's quiet
+// enough to sit under speech and other cues.
+function startWaterSound() {
+  const ctx = ensureAudio();
+  if (!ctx || water) return;
+
+  // 2-second noise buffer, looped. Shaped toward low/mid frequencies to
+  // approximate moving water rather than hiss.
+  const buf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  let lastOut = 0;
+  for (let i = 0; i < data.length; i++) {
+    const white = Math.random() * 2 - 1;
+    // Simple 1-pole lowpass to turn white noise into something more watery.
+    lastOut = (lastOut + 0.04 * white) / 1.04;
+    data[i] = lastOut * 3.2;
+  }
+
+  const noise = ctx.createBufferSource();
+  noise.buffer = buf;
+  noise.loop = true;
+
+  const lowpass = ctx.createBiquadFilter();
+  lowpass.type = 'lowpass';
+  lowpass.frequency.value = 850;
+  lowpass.Q.value = 0.4;
+
+  const highpass = ctx.createBiquadFilter();
+  highpass.type = 'highpass';
+  highpass.frequency.value = 80;
+
+  // Slow LFO on the filter to create a breathing, wave-like quality.
+  const lfo = ctx.createOscillator();
+  lfo.frequency.value = 0.15; // ~ one swell every 6-7 seconds
+  const lfoGain = ctx.createGain();
+  lfoGain.gain.value = 250;
+  lfo.connect(lfoGain).connect(lowpass.frequency);
+
+  const master = ctx.createGain();
+  master.gain.value = 0.08; // quiet background
+
+  noise.connect(highpass).connect(lowpass).connect(master).connect(ctx.destination);
+
+  noise.start();
+  lfo.start();
+
+  // Occasional "wave crash" swells - a short amplitude bump every few seconds.
+  const swell = () => {
+    if (!water) return;
+    const now = ctx.currentTime;
+    const g = master.gain;
+    const base = 0.08;
+    const peak = 0.14;
+    g.cancelScheduledValues(now);
+    g.setValueAtTime(base, now);
+    g.linearRampToValueAtTime(peak, now + 0.6);
+    g.linearRampToValueAtTime(base, now + 1.8);
+  };
+  const swellInterval = setInterval(swell, 4500 + Math.random() * 2500);
+
+  water = {
+    masterGain: master,
+    stop() {
+      clearInterval(swellInterval);
+      try { noise.stop(); lfo.stop(); } catch (_) {}
+    },
+  };
+}
+
+function setSoundOn(on) {
+  soundOn = on;
+  if (els.soundBtn) {
+    els.soundBtn.textContent = on ? '\uD83D\uDD0A SOUND ON' : '\uD83D\uDD07 SOUND OFF';
+  }
+  if (on) {
+    startWaterSound();
+  } else if (water) {
+    water.stop();
+    water = null;
+  }
+}
+
+// Browsers require a user gesture before audio starts. We kick off the
+// ambient track on the first click anywhere on the page.
+document.addEventListener('click', () => {
+  ensureAudio();
+  if (soundOn) startWaterSound();
+}, { once: true });
+
+if (els.soundBtn) {
+  els.soundBtn.addEventListener('click', () => setSoundOn(!soundOn));
+}
 
 function beep(freq, duration = 0.15, type = 'sine', vol = 0.2) {
+  if (!soundOn) return;
   const ctx = ensureAudio();
   if (!ctx) return;
   const osc = ctx.createOscillator();
