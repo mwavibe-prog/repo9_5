@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Steady Sailors - Player</title>
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body class="player-page">
+
+<header class="player-header" id="playerHeader">
+  <h1>Steady Sailors</h1>
+</header>
+
+<main class="player-layout">
+
+  <section class="join-screen" id="joinScreen">
+    <h2>Welcome aboard!</h2>
+    <p class="help-line">Type your name and press JOIN to hop on the boat.</p>
+    <input id="nameInput" type="text" placeholder="Your name" maxlength="20" autocomplete="off" />
+    <button id="joinBtn" class="big-btn green">JOIN THE BOAT</button>
+    <p class="error" id="joinError"></p>
+  </section>
+
+  <section class="play-screen hidden" id="playScreen">
+    <div class="you-panel" id="youPanel">
+      <span class="you-label">You:</span>
+      <span class="you-name" id="youName"></span>
+    </div>
+
+    <div class="status-banner" id="statusBanner">Get ready...</div>
+
+    <div class="action-area" id="actionArea">
+      <!-- Big action button(s) appear here depending on phase. -->
+    </div>
+
+    <div class="mini-status" id="miniStatus"></div>
+  </section>
+
+</main>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/player.js"></script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Steady Sailors - Main Screen</title>
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body class="host-page">
+
+<header class="top-bar">
+  <h1>Steady Sailors</h1>
+  <p class="tagline">Row together. Steer together. Reach the shore.</p>
+</header>
+
+<main class="host-layout">
+
+  <section class="join-panel" id="joinPanel">
+    <h2>Join the boat on your phone</h2>
+    <div class="qr-wrap">
+      <div id="qr"></div>
+    </div>
+    <p class="join-url">Open: <span id="joinUrl">/play</span></p>
+    <p class="player-count">
+      <span id="playerCount">0</span> / 15 sailors onboard
+    </p>
+    <ul class="player-list" id="playerList"></ul>
+  </section>
+
+  <section class="game-panel">
+    <div class="status-banner" id="statusBanner">Waiting for sailors to join...</div>
+
+    <div class="lives" id="lives" aria-label="Lives remaining">
+      <span class="life">&#10084;</span>
+      <span class="life">&#10084;</span>
+      <span class="life">&#10084;</span>
+    </div>
+
+    <div class="river" id="river">
+      <div class="river-water"></div>
+      <div class="finish-line">FINISH</div>
+      <div class="boat" id="boat">
+        <div class="boat-body">&#128676;</div>
+      </div>
+      <div class="obstacle hidden" id="obstacle"></div>
+    </div>
+
+    <div class="progress-track" aria-label="Distance to shore">
+      <div class="progress-fill" id="progressFill"></div>
+      <div class="progress-label"><span id="progressPct">0</span>% to shore</div>
+    </div>
+
+    <div class="phase-panel" id="phasePanel">
+      <!-- Changes based on phase: rowing / steering / won / lost -->
+    </div>
+
+    <div class="host-controls">
+      <button id="startBtn" class="big-btn green">START</button>
+      <button id="resetBtn" class="big-btn grey">RESET</button>
+    </div>
+
+    <p class="help-line">
+      Host: press START when everyone has joined. Press RESET to play again.
+    </p>
+  </section>
+
+</main>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/host.js"></script>
+</body>
+</html>
